@@ -102,3 +102,31 @@ def build_order(
         + [card_id for card_id, _ in final_scored]
         + final_unscored
     )
+
+
+
+def reposition_preserving_user_defaults(
+    col: object,
+    card_ids: list[int],
+    random_config_key: object,
+    shift_config_key: object,
+):
+    """Reposition supplied cards without changing Anki's saved defaults.
+
+    Anki's reposition_new_cards() persists its randomize and shift_existing
+    arguments as global preferences. Snapshot and restore those preferences
+    so this add-on does not alter the user's Browser reposition defaults.
+    """
+    scheduler = getattr(col, "sched")
+    defaults = scheduler.reposition_defaults()
+    try:
+        return scheduler.reposition_new_cards(
+            card_ids=card_ids,
+            starting_from=0,
+            step_size=1,
+            randomize=False,
+            shift_existing=False,
+        )
+    finally:
+        col.set_config_bool(random_config_key, bool(defaults.random))
+        col.set_config_bool(shift_config_key, bool(defaults.shift))
