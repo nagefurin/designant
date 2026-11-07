@@ -48,7 +48,7 @@ The add-on only repositions **active, ordinary new cards**. A candidate must hav
 
 It calls Anki's `reposition_new_cards()` with `shift_existing=False`, then restores Anki's saved random-reposition and shift-existing preferences. Learning, review, suspended, buried, and filtered-deck cards are not passed to the reorder operation. The add-on does not change review intervals, ease, FSRS memory state, deck options, or daily limits.
 
-The default search is `deck:mining is:new`, so the add-on manages the complete ordinary new-card queue. Narrowing `search_to_sort` to a subset intentionally leaves other new cards untouched; because new-card due positions are shared, this can create overlapping position numbers. Keep the default unless a partial reorder is intentional.
+The default search is `deck:mining is:new`, so the add-on manages the active ordinary new-card queue in the Mining deck (including its matching subdecks, according to Anki search semantics). New cards in other decks are left untouched. Because new-card due positions are shared, reordering only one deck can leave position numbers overlapping with cards outside that search; this is intentional for this Mining-only default.
 
 ## Install
 
@@ -64,7 +64,7 @@ Disable AutoReorder and Priority Reorder for the same cards while this add-on is
 
 - After adding a note through Anki's Add window.
 - After adding a note through AnkiConnect (using `note_will_be_added`).
-- After editing an existing note through AnkiConnect `updateNoteFields` or `updateNote` (using Anki's `note_will_flush` hook).
+- After editing an existing note's fields through AnkiConnect `updateNoteFields` or `updateNote` (using Anki's `note_will_flush` hook). A tag-only update does not change `FreqSort` and does not require a reorder.
 - Whenever an Anki profile is opened or switched to.
 - After synchronization finishes, to include new cards received from another device.
 - Imports do not trigger `note_will_be_added`; sync and the next profile open are the catch-up points.
@@ -92,7 +92,7 @@ Open **Tools → Add-ons → Designant → Config**.
 
 Blank or non-numeric `FreqSort` values cannot be frequency-ranked. They can enter the five-card date group; any remaining cards without a numeric value trail the final frequency-ranked group.
 
-Anki card IDs are millisecond timestamps of card creation, so the add-on uses the ID for the date group instead of note modification time.
+Anki card IDs are millisecond timestamps of card creation, so the add-on uses the ID for the date group instead of note modification time. This is equivalent to sorting by **Created Time (Card)**, not just **Created Date (Card)**.
 
 ## Development
 
