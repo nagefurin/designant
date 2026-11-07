@@ -18,7 +18,7 @@ The five-card date group is selected from the cards remaining after the first 20
 
 The add-on only repositions **active, ordinary new cards**. A candidate must have Anki's `CardType.New` (`type == 0`), `CardQueue.New` (`queue == 0`), and no original deck ID (`odid == 0`).
 
-It calls Anki's `reposition_new_cards()` with `shift_existing=False`. Learning, review, suspended, buried, and filtered-deck cards are not passed to the reorder operation. The add-on does not change review intervals, ease, FSRS memory state, deck options, or daily limits.
+It calls Anki's `reposition_new_cards()` with `shift_existing=False`, then restores Anki's saved random-reposition and shift-existing preferences. Learning, review, suspended, buried, and filtered-deck cards are not passed to the reorder operation. The add-on does not change review intervals, ease, FSRS memory state, deck options, or daily limits.
 
 The default search is `is:new`, so the add-on manages the complete ordinary new-card queue. Narrowing `search_to_sort` to a subset intentionally leaves other new cards untouched; because new-card due positions are shared, this can create overlapping position numbers. Keep the default unless a partial reorder is intentional.
 
