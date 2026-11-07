@@ -14,6 +14,25 @@ The default order is:
 
 The five-card date group is selected from the cards remaining after the first 20 frequency-ranked cards. The final group is then frequency-ranked again. With a daily new-card limit of 25, this gives the requested 20 frequency-ranked cards plus five oldest-created cards.
 
+
+## How the split interacts with the daily new-card limit
+
+The add-on's split is based on **queue positions**, not on the deck's daily limit. The defaults always reserve:
+- 20 positions for frequency-ranked cards,
+- 5 positions for oldest-created cards,
+- then frequency-ranked cards for every later position.
+
+For example, with a daily new-card limit of **30**, Anki draws up to 30 cards from the queue:
+- positions 1–20: FreqSort,
+- positions 21–25: oldest-created,
+- positions 26–30: FreqSort again.
+
+With a limit of 25, you see the first two groups only. With a limit of 15, you see only the first 15 frequency-ranked cards. Raising the limit from 25 to 30 does not change the 20/5 split; it exposes five more cards from the final frequency-ranked section.
+
+The grouping is independent of the limit. If you later change your daily limit to 40, positions 31–40 also come from the final frequency-ranked section.
+
+This assumes Anki is drawing from the same new-card queue selected by `search_to_sort` and that other deck/subdeck limits or other add-ons are not imposing a different selection order.
+
 ## Safety: what the add-on changes
 
 The add-on only repositions **active, ordinary new cards**. A candidate must have Anki's `CardType.New` (`type == 0`), `CardQueue.New` (`queue == 0`), and no original deck ID (`odid == 0`).
