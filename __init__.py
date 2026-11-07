@@ -51,8 +51,11 @@ def _config() -> dict[str, Any]:
     raw = mw.addonManager.getConfig(__name__) or {}
     config = dict(_DEFAULT_CONFIG)
     config.update(raw)
+    # Preserve an existing user's previous date_count setting after the rename.
+    if "created_time_count" not in raw and "date_count" in raw:
+        config["created_time_count"] = raw["date_count"]
 
-    config["search_to_sort"] = str(config.get("search_to_sort", "is:new")).strip() or "is:new"
+    config["search_to_sort"] = str(config.get("search_to_sort", "deck:mining is:new")).strip() or "deck:mining is:new"
     config["frequency_field"] = str(config.get("frequency_field", "FreqSort")).strip() or "FreqSort"
     for key, default in (("frequency_count", 20), ("created_time_count", 5), ("debounce_ms", 700)):
         try:
