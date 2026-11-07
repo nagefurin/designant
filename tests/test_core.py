@@ -32,7 +32,7 @@ class BuildOrderTests(unittest.TestCase):
             + list(range(1000, 1005))
             + list(range(1009, 1004, -1))
         )
-        self.assertEqual(build_order(rows, frequency_count=20, date_count=5), expected)
+        self.assertEqual(build_order(rows, frequency_count=20, created_time_count=5), expected)
 
     def test_date_group_is_selected_from_after_frequency_prefix(self):
         rows = [
@@ -45,38 +45,38 @@ class BuildOrderTests(unittest.TestCase):
             (60, "7"),
         ]
         self.assertEqual(
-            build_order(rows, frequency_count=2, date_count=3),
+            build_order(rows, frequency_count=2, created_time_count=3),
             [10, 90, 20, 30, 40, 50, 60],
         )
 
     def test_missing_frequency_can_enter_date_group_but_trails_final_frequency_group(self):
         rows = [(101, "1"), (102, "2"), (103, ""), (104, "3"), (105, "")]
         self.assertEqual(
-            build_order(rows, frequency_count=1, date_count=2),
+            build_order(rows, frequency_count=1, created_time_count=2),
             [101, 102, 103, 104, 105],
         )
 
     def test_frequency_ties_use_older_card_id(self):
         rows = [(300, "5"), (100, "5"), (200, "5"), (400, "6")]
-        self.assertEqual(build_order(rows, frequency_count=2, date_count=1), [100, 200, 300, 400])
+        self.assertEqual(build_order(rows, frequency_count=2, created_time_count=1), [100, 200, 300, 400])
 
     def test_reverse_frequency_does_not_reverse_ties(self):
         rows = [(300, "5"), (100, "5"), (200, "8"), (400, "1")]
         self.assertEqual(
-            build_order(rows, frequency_count=2, date_count=1, frequency_reverse=True),
+            build_order(rows, frequency_count=2, created_time_count=1, frequency_reverse=True),
             [200, 100, 300, 400],
         )
 
     def test_created_reverse_changes_middle_group_order(self):
         rows = [(100, "1"), (200, "2"), (300, "3"), (400, "4"), (500, "5")]
         self.assertEqual(
-            build_order(rows, frequency_count=1, date_count=2, created_reverse=True),
+            build_order(rows, frequency_count=1, created_time_count=2, created_reverse=True),
             [100, 500, 400, 200, 300],
         )
 
     def test_zero_frequency_count_starts_with_date_group(self):
         rows = [(300, "3"), (100, "1"), (200, "2"), (400, "4")]
-        self.assertEqual(build_order(rows, frequency_count=0, date_count=2), [100, 200, 300, 400])
+        self.assertEqual(build_order(rows, frequency_count=0, created_time_count=2), [100, 200, 300, 400])
 
 
 class CardEligibilityTests(unittest.TestCase):
