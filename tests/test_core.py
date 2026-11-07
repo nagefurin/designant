@@ -5,10 +5,70 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from core import (
     build_order,
+    flatten_config,
     is_active_normal_new_card,
     parse_frequency,
     reposition_preserving_user_defaults,
 )
+
+
+class ConfigFlatteningTests(unittest.TestCase):
+    DEFAULTS = {
+        "search_to_sort": "deck:mining is:new",
+        "frequency_field": "FreqSort",
+        "sorting_options": {
+            "frequency_count": 20,
+            "enable_freq_sort": True,
+            "created_time_count": 5,
+            "enable_time_sort": True,
+            "frequency_reverse": False,
+            "created_reverse": False,
+        },
+        "automatic_reordering": {
+            "reorder_on_open": True,
+            "reorder_on_add": True,
+            "reorder_on_note_update": True,
+            "reorder_on_sync": True,
+            "delay_ms": 5000,
+            "show_tooltip": True,
+        },
+    }
+
+    def test_nested_config_is_flattened_for_internal_use(self):
+        config = flatten_config(
+            {
+                "search_to_sort": "deck:mining is:new",
+                "sorting_options": {"frequency_count": 12},
+                "automatic_reordering": {"delay_ms": 2500},
+            },
+            self.DEFAULTS,
+        )
+        self.assertEqual(config["frequency_count"], 12)
+        self.assertTrue(config["enable_freq_sort"])
+        self.assertEqual(config["created_time_count"], 5)
+        self.assertEqual(config["delay_ms"], 2500)
+        self.assertTrue(config["reorder_on_open"])
+
+    def test_legacy_flat_sorting_and_trigger_keys_remain_supported(self):
+        config = flatten_config(
+            {
+                "frequency_count": 15,
+                "created_time_count": 7,
+                "reorder_on_sync": False,
+            },
+            self.DEFAULTS,
+        )
+        self.assertEqual(config["frequency_count"], 15)
+        self.assertEqual(config["created_time_count"], 7)
+        self.assertFalse(config["reorder_on_sync"])
+
+    def test_legacy_date_count_is_migrated(self):
+        config = flatten_config({"date_count": 9}, self.DEFAULTS)
+        self.assertEqual(config["created_time_count"], 9)
+
+    def test_new_delay_default_is_five_seconds(self):
+        config = flatten_config({"debounce_ms": 700}, self.DEFAULTS)
+        self.assertEqual(config["delay_ms"], 5000)
 
 
 class FrequencyParsingTests(unittest.TestCase):
