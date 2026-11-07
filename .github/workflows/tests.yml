@@ -18,3 +18,9 @@ jobs:
         run: python -m compileall -q __init__.py core.py tools/build_addon.py
       - name: Build Anki add-on archive
         run: python tools/build_addon.py
+      - name: Upload installable add-on
+        uses: actions/upload-artifact@v4
+        with:
+          name: frequency-date-reorder
+          path: dist/frequency_date_reorder.ankiaddon
+          if-no-files-found: error
