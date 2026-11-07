@@ -30,6 +30,8 @@ _DEFAULT_CONFIG: dict[str, Any] = {
     "search_to_sort": "deck:mining is:new",
     "frequency_field": "FreqSort",
     "frequency_count": 20,
+    "enable_freq_sort": True,
+    "enable_time_sort": True,
     "created_time_count": 5,
     "frequency_reverse": False,
     "created_reverse": False,
@@ -64,6 +66,8 @@ def _config() -> dict[str, Any]:
             config[key] = default
 
     for key in (
+        "enable_freq_sort",
+        "enable_time_sort",
         "frequency_reverse",
         "created_reverse",
         "reorder_on_open",
@@ -117,6 +121,8 @@ def reorder_collection(col: Any, config: dict[str, Any]) -> OpChangesWithCount:
         created_time_count=config["created_time_count"],
         frequency_reverse=config["frequency_reverse"],
         created_reverse=config["created_reverse"],
+        enable_freq_sort=config["enable_freq_sort"],
+        enable_time_sort=config["enable_time_sort"],
     )
 
     # Avoid unnecessary writes when the active new-card order is already right.
