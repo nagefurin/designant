@@ -74,6 +74,26 @@ class BuildOrderTests(unittest.TestCase):
             [100, 500, 400, 200, 300],
         )
 
+    def test_same_day_cards_are_ordered_by_exact_creation_time(self):
+        # All IDs represent timestamps on the same calendar day. The middle
+        # group still picks the oldest creation times, not just the date.
+        midnight = 1_800_000_000_000
+        rows = [
+            (midnight + 10_000, "1"),
+            (midnight + 50_000, "2"),
+            (midnight + 20_000, "3"),
+            (midnight + 30_000, "4"),
+            (midnight + 40_000, "5"),
+            (midnight + 60_000, "6"),
+            (midnight + 70_000, "7"),
+        ]
+        self.assertEqual(
+            build_order(rows, frequency_count=2, created_time_count=3),
+            [midnight + 10_000, midnight + 50_000, midnight + 20_000,
+             midnight + 30_000, midnight + 40_000, midnight + 60_000,
+             midnight + 70_000],
+        )
+
     def test_zero_frequency_count_starts_with_date_group(self):
         rows = [(300, "3"), (100, "1"), (200, "2"), (400, "4")]
         self.assertEqual(build_order(rows, frequency_count=0, created_time_count=2), [100, 200, 300, 400])
