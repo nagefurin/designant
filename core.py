@@ -40,14 +40,14 @@ def is_active_normal_new_card(card: object) -> bool:
 def build_order(
     card_values: Iterable[Tuple[int, object]],
     frequency_count: int = 20,
-    date_count: int = 5,
+    created_time_count: int = 5,
     frequency_reverse: bool = False,
     created_reverse: bool = False,
 ) -> list[int]:
     """Build the requested three-part new-card order.
 
     1. First frequency_count cards by FreqSort.
-    2. Next date_count cards by creation time, selected from the remainder.
+    2. Next created_time_count cards by creation time, selected from the remainder.
     3. All remaining cards by FreqSort again.
 
     Each input item is (card_id, frequency_field_value). Anki card IDs are
@@ -73,7 +73,7 @@ def build_order(
     scored.sort(key=lambda item: item[1], reverse=frequency_reverse)
 
     frequency_count = max(0, int(frequency_count))
-    date_count = max(0, int(date_count))
+    created_time_count = max(0, int(created_time_count))
 
     first_frequency = scored[:frequency_count]
     remaining_scored = scored[frequency_count:]
@@ -83,7 +83,7 @@ def build_order(
     remaining_ids = {card_id for card_id, _ in remaining_scored}
     remaining_ids.update(unscored)
     date_candidates = sorted(remaining_ids, reverse=created_reverse)
-    date_group = date_candidates[:date_count]
+    date_group = date_candidates[:created_time_count]
     date_group_set = set(date_group)
 
     # After the date group, return to frequency ordering for all remaining
