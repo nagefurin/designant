@@ -1,13 +1,14 @@
 {
-    "search_to_sort": "is:new",
+    "search_to_sort": "deck:mining is:new",
     "frequency_field": "FreqSort",
     "frequency_count": 20,
-    "date_count": 5,
     "frequency_reverse": false,
     "created_reverse": false,
     "reorder_on_open": true,
     "reorder_on_add": true,
     "reorder_on_sync": true,
     "debounce_ms": 700,
-    "show_tooltip": true
+    "show_tooltip": true,
+    "created_time_count": 5,
+    "reorder_on_note_update": true
 }
