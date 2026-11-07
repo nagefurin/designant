@@ -7,45 +7,23 @@ from typing import Iterable, Optional, Tuple
 
 
 def flatten_config(raw_config: object, defaults: dict) -> dict:
-    """Flatten grouped JSON settings into the internal settings dictionary.
-
-    New configs group values under sorting_options and automatic_reordering.
-    Legacy flat keys remain readable so existing installations retain their
-    sorting and trigger preferences. The old debounce_ms key is intentionally
-    not migrated: delay_ms now defaults to 5000 ms.
-    """
+    """Flatten the current grouped JSON schema for internal use."""
     raw = raw_config if isinstance(raw_config, dict) else {}
+    sorting = raw.get("sorting_options")
+    automation = raw.get("automatic_reordering")
+    if not isinstance(sorting, dict):
+        sorting = {}
+    if not isinstance(automation, dict):
+        automation = {}
+
     config = {
-        "search_to_sort": raw.get(
-            "search_to_sort", defaults.get("search_to_sort", "deck:mining is:new")
-        ),
-        "frequency_field": raw.get(
-            "frequency_field", defaults.get("frequency_field", "FreqSort")
-        ),
+        "search_to_sort": raw.get("search_to_sort", defaults["search_to_sort"]),
+        "frequency_field": raw.get("frequency_field", defaults["frequency_field"]),
     }
-
-    sorting_raw = raw.get("sorting_options")
-    if not isinstance(sorting_raw, dict):
-        sorting_raw = {}
-
-    automation_raw = raw.get("automatic_reordering")
-    if not isinstance(automation_raw, dict):
-        automation_raw = {}
-
-    for key, default in defaults.get("sorting_options", {}).items():
-        value = sorting_raw.get(key, raw.get(key, default))
-        # Compatibility with the previous date_count setting.
-        if (
-            key == "created_time_count"
-            and key not in sorting_raw
-            and key not in raw
-            and "date_count" in raw
-        ):
-            value = raw["date_count"]
-        config[key] = value
-
-    for key, default in defaults.get("automatic_reordering", {}).items():
-        config[key] = automation_raw.get(key, raw.get(key, default))
+    for key, default in defaults["sorting_options"].items():
+        config[key] = sorting.get(key, default)
+    for key, default in defaults["automatic_reordering"].items():
+        config[key] = automation.get(key, default)
 
     return config
 
