@@ -1,16 +1,20 @@
 {
     "search_to_sort": "deck:mining is:new",
     "frequency_field": "FreqSort",
-    "frequency_count": 20,
-    "enable_freq_sort": true,
-    "created_time_count": 5,
-    "enable_time_sort": true,
-    "frequency_reverse": false,
-    "created_reverse": false,
-    "reorder_on_open": true,
-    "reorder_on_add": true,
-    "reorder_on_note_update": true,
-    "reorder_on_sync": true,
-    "debounce_ms": 700,
-    "show_tooltip": true
+    "sorting_options": {
+        "frequency_count": 20,
+        "enable_freq_sort": true,
+        "created_time_count": 5,
+        "enable_time_sort": true,
+        "frequency_reverse": false,
+        "created_reverse": false
+    },
+    "automatic_reordering": {
+        "reorder_on_open": true,
+        "reorder_on_add": true,
+        "reorder_on_note_update": true,
+        "reorder_on_sync": true,
+        "delay_ms": 5000,
+        "show_tooltip": true
+    }
 }
