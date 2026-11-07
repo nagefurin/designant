@@ -13,13 +13,17 @@ from __future__ import annotations
 from typing import Any
 
 from anki import hooks as backend_hooks
-from anki.collection import OpChangesWithCount
+from anki.collection import Config, OpChangesWithCount
 from aqt import gui_hooks, mw
 from aqt.operations import CollectionOp
 from aqt.qt import QAction, QTimer
 from aqt.utils import qconnect, tooltip
 
-from .core import build_order, is_active_normal_new_card
+from .core import (
+    build_order,
+    is_active_normal_new_card,
+    reposition_preserving_user_defaults,
+)
 
 
 _DEFAULT_CONFIG: dict[str, Any] = {
@@ -116,13 +120,13 @@ def reorder_collection(col: Any, config: dict[str, Any]) -> OpChangesWithCount:
 
     # The default search is is:new (the complete normal new-card queue). With
     # a narrowed custom search, cards outside it are deliberately left alone.
-    # shift_existing=False is essential: Anki must not shift other card due values.
-    return col.sched.reposition_new_cards(
-        card_ids=ordered_ids,
-        starting_from=0,
-        step_size=1,
-        randomize=False,
-        shift_existing=False,
+    # The helper uses shift_existing=False and restores Anki's saved reposition
+    # preferences afterwards, because Anki persists those API arguments globally.
+    return reposition_preserving_user_defaults(
+        col,
+        ordered_ids,
+        Config.Bool.RANDOM_ORDER_REPOSITION,
+        Config.Bool.SHIFT_POSITION_OF_EXISTING_CARDS,
     )
 
 
