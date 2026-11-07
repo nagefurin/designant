@@ -34,6 +34,22 @@ The grouping is independent of the limit. If you later change your daily limit t
 This assumes Anki is drawing from the same new-card queue selected by `search_to_sort` and that other deck/subdeck limits or other add-ons are not imposing a different selection order.
 
 
+
+## Sorting mode switches
+
+Both switches default to `true`:
+
+| `enable_freq_sort` | `enable_time_sort` | Behavior |
+|---|---|---|
+| `true` | `true` | Normal three-part order: first frequency block, creation-time block, then frequency-sorted remainder. |
+| `true` | `false` | Entire selected queue is sorted by `FreqSort`, like a single-field AutoReorder. |
+| `false` | `true` | Entire selected queue is sorted by Created Time (Card), oldest first. |
+| `false` | `false` | Preserve Anki's existing due order; no sorting is applied. |
+
+The `frequency_count` and `created_time_count` split sizes are used when both switches are enabled. In single-sort mode, the enabled sort applies to the entire selected queue.
+
+For example, with `frequency_count: 20`, both switches enabled, and a deck daily new-card limit of 20, the 20 cards Anki introduces that day are all from the first FreqSort block. The creation-time block begins at position 21, so it does not appear in that day's study queue. This is effectively a pure FreqSort reorder for that day's 20 cards.
+
 ## Creation date vs. creation time
 
 The middle group uses **Created Time (Card)**, not a day-only Created Date value. Anki card IDs contain the card's creation timestamp in milliseconds, and Designant sorts those IDs numerically. This preserves the date and the time within that date.
@@ -79,7 +95,9 @@ Open **Tools → Add-ons → Designant → Config**.
 |---|---:|---|
 | `search_to_sort` | `deck:mining is:new` | Anki search selecting candidates; each card is additionally checked for new queue state and non-filtered status. |
 | `frequency_field` | `FreqSort` | Note field containing numeric frequency/rank values. |
-| `frequency_count` | `20` | Number of frequency-ranked cards placed first. |
+| `frequency_count` | `20` | Number of frequency-ranked cards placed first (used when both sort modes are enabled). |
+| `enable_freq_sort` | `true` | Enable frequency sorting. With time sorting off, the whole queue is sorted by `FreqSort`. |
+| `enable_time_sort` | `true` | Enable creation-time sorting. With frequency sorting off, the whole queue is sorted by Created Time (Card). |
 | `created_time_count` | `5` | Number of oldest remaining cards in the middle group. |
 | `frequency_reverse` | `false` | Set true if larger frequency values should come first. |
 | `created_reverse` | `false` | Set true for newest-created cards first in the middle group. |
