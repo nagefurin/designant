@@ -3,7 +3,12 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from core import build_order, is_active_normal_new_card, parse_frequency
+from core import (
+    build_order,
+    is_active_normal_new_card,
+    parse_frequency,
+    reposition_preserving_user_defaults,
+)
 
 
 class FrequencyParsingTests(unittest.TestCase):
@@ -91,6 +96,44 @@ class CardEligibilityTests(unittest.TestCase):
 
     def test_missing_scheduler_state_is_not_eligible(self):
         self.assertFalse(is_active_normal_new_card(object()))
+
+
+
+class RepositionSafetyTests(unittest.TestCase):
+    class FakeScheduler:
+        def __init__(self, config):
+            self.config = config
+            self.received = None
+
+        def reposition_defaults(self):
+            return type("Defaults", (), {"random": self.config[23], "shift": self.config[24]})()
+
+        def reposition_new_cards(self, **kwargs):
+            self.received = kwargs
+            # Simulate Anki persisting the API arguments as user preferences.
+            self.config[23] = kwargs["randomize"]
+            self.config[24] = kwargs["shift_existing"]
+            return type("Changes", (), {"count": len(kwargs["card_ids"])})()
+
+    class FakeCollection:
+        def __init__(self):
+            self.config = {23: True, 24: True}
+            self.sched = RepositionSafetyTests.FakeScheduler(self.config)
+
+        def set_config_bool(self, key, value):
+            self.config[key] = value
+
+    def test_reposition_does_not_shift_other_cards_or_change_user_defaults(self):
+        col = self.FakeCollection()
+        result = reposition_preserving_user_defaults(col, [11, 22, 33], 23, 24)
+
+        self.assertEqual(result.count, 3)
+        self.assertEqual(col.sched.received["card_ids"], [11, 22, 33])
+        self.assertFalse(col.sched.received["shift_existing"])
+        self.assertFalse(col.sched.received["randomize"])
+        self.assertEqual(col.sched.received["starting_from"], 0)
+        self.assertEqual(col.sched.received["step_size"], 1)
+        self.assertEqual(col.config, {23: True, 24: True})
 
 
 if __name__ == "__main__":
