@@ -21,6 +21,7 @@ from aqt.utils import qconnect, tooltip
 
 from .core import (
     build_order,
+    flatten_config,
     is_active_normal_new_card,
     reposition_preserving_user_defaults,
 )
@@ -29,18 +30,22 @@ from .core import (
 _DEFAULT_CONFIG: dict[str, Any] = {
     "search_to_sort": "deck:mining is:new",
     "frequency_field": "FreqSort",
-    "frequency_count": 20,
-    "enable_freq_sort": True,
-    "enable_time_sort": True,
-    "created_time_count": 5,
-    "frequency_reverse": False,
-    "created_reverse": False,
-    "reorder_on_open": True,
-    "reorder_on_add": True,
-    "reorder_on_note_update": True,
-    "reorder_on_sync": True,
-    "debounce_ms": 700,
-    "show_tooltip": True,
+    "sorting_options": {
+        "frequency_count": 20,
+        "enable_freq_sort": True,
+        "created_time_count": 5,
+        "enable_time_sort": True,
+        "frequency_reverse": False,
+        "created_reverse": False,
+    },
+    "automatic_reordering": {
+        "reorder_on_open": True,
+        "reorder_on_add": True,
+        "reorder_on_note_update": True,
+        "reorder_on_sync": True,
+        "delay_ms": 5000,
+        "show_tooltip": True,
+    },
 }
 
 _reorder_running = False
@@ -49,17 +54,17 @@ _profile_closing = False
 
 
 def _config() -> dict[str, Any]:
-    """Read and normalize add-on configuration on the GUI thread."""
+    """Read, flatten and normalize add-on configuration on the GUI thread."""
     raw = mw.addonManager.getConfig(__name__) or {}
-    config = dict(_DEFAULT_CONFIG)
-    config.update(raw)
-    # Preserve an existing user's previous date_count setting after the rename.
-    if "created_time_count" not in raw and "date_count" in raw:
-        config["created_time_count"] = raw["date_count"]
+    config = flatten_config(raw, _DEFAULT_CONFIG)
 
     config["search_to_sort"] = str(config.get("search_to_sort", "deck:mining is:new")).strip() or "deck:mining is:new"
     config["frequency_field"] = str(config.get("frequency_field", "FreqSort")).strip() or "FreqSort"
-    for key, default in (("frequency_count", 20), ("created_time_count", 5), ("debounce_ms", 700)):
+    for key, default in (
+        ("frequency_count", 20),
+        ("created_time_count", 5),
+        ("delay_ms", 5000),
+    ):
         try:
             config[key] = max(0, int(config.get(key, default)))
         except (TypeError, ValueError):
@@ -76,7 +81,7 @@ def _config() -> dict[str, Any]:
         "reorder_on_sync",
         "show_tooltip",
     ):
-        config[key] = bool(config.get(key, _DEFAULT_CONFIG[key]))
+        config[key] = bool(config.get(key, False))
 
     return config
 
@@ -191,10 +196,10 @@ def _start_reorder() -> None:
 
 
 def schedule_reorder() -> None:
-    """Debounce triggers so several additions combine into one reorder."""
+    """Wait for delay_ms after the latest trigger, then reorder the queue."""
     if _profile_closing or mw.col is None:
         return
-    _timer.start(_config()["debounce_ms"])
+    _timer.start(_config()["delay_ms"])
 
 
 def _schedule_add_reorder_if_enabled() -> None:
@@ -227,7 +232,7 @@ def _on_note_will_be_added(_col: Any, _note: Any, _deck_id: Any) -> None:
 
 
 def _on_note_added(_note: Any) -> None:
-    """Post-insert Add-window hook; restart debounce after the note is saved."""
+    """Post-insert Add-window hook; restart delay after the note is saved."""
     if _config()["reorder_on_add"]:
         schedule_reorder()
 
