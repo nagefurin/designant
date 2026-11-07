@@ -37,37 +37,50 @@ class ConfigFlatteningTests(unittest.TestCase):
     def test_nested_config_is_flattened_for_internal_use(self):
         config = flatten_config(
             {
-                "search_to_sort": "deck:mining is:new",
-                "sorting_options": {"frequency_count": 12},
-                "automatic_reordering": {"delay_ms": 2500},
+                "search_to_sort": "deck:custom is:new",
+                "frequency_field": "MyFrequency",
+                "sorting_options": {
+                    "frequency_count": 12,
+                    "enable_freq_sort": False,
+                },
+                "automatic_reordering": {
+                    "delay_ms": 2500,
+                    "reorder_on_sync": False,
+                },
             },
             self.DEFAULTS,
         )
+        self.assertEqual(config["search_to_sort"], "deck:custom is:new")
+        self.assertEqual(config["frequency_field"], "MyFrequency")
         self.assertEqual(config["frequency_count"], 12)
-        self.assertTrue(config["enable_freq_sort"])
+        self.assertFalse(config["enable_freq_sort"])
         self.assertEqual(config["created_time_count"], 5)
         self.assertEqual(config["delay_ms"], 2500)
+        self.assertFalse(config["reorder_on_sync"])
         self.assertTrue(config["reorder_on_open"])
 
-    def test_legacy_flat_sorting_and_trigger_keys_remain_supported(self):
+    def test_missing_nested_settings_use_current_defaults(self):
+        config = flatten_config({}, self.DEFAULTS)
+        self.assertEqual(config["frequency_count"], 20)
+        self.assertEqual(config["created_time_count"], 5)
+        self.assertEqual(config["delay_ms"], 5000)
+        self.assertTrue(config["enable_freq_sort"])
+        self.assertTrue(config["enable_time_sort"])
+
+    def test_flat_legacy_keys_are_not_read(self):
         config = flatten_config(
             {
-                "frequency_count": 15,
-                "created_time_count": 7,
+                "frequency_count": 99,
+                "created_time_count": 88,
+                "date_count": 77,
                 "reorder_on_sync": False,
+                "debounce_ms": 700,
             },
             self.DEFAULTS,
         )
-        self.assertEqual(config["frequency_count"], 15)
-        self.assertEqual(config["created_time_count"], 7)
-        self.assertFalse(config["reorder_on_sync"])
-
-    def test_legacy_date_count_is_migrated(self):
-        config = flatten_config({"date_count": 9}, self.DEFAULTS)
-        self.assertEqual(config["created_time_count"], 9)
-
-    def test_new_delay_default_is_five_seconds(self):
-        config = flatten_config({"debounce_ms": 700}, self.DEFAULTS)
+        self.assertEqual(config["frequency_count"], 20)
+        self.assertEqual(config["created_time_count"], 5)
+        self.assertTrue(config["reorder_on_sync"])
         self.assertEqual(config["delay_ms"], 5000)
 
 
@@ -122,7 +135,6 @@ class BuildOrderTests(unittest.TestCase):
         rows = [(card_id, str(1030 - card_id)) for card_id in range(1000, 1030)]
         ordered = build_order(rows, frequency_count=20, created_time_count=5)
         self.assertEqual(ordered[:20], list(range(1029, 1009, -1)))
-        # Anki daily limit 20 means positions 21 onward are not drawn that day.
         self.assertEqual(len(ordered[:20]), 20)
 
     def test_date_group_is_selected_from_after_frequency_prefix(self):
