@@ -1,4 +1,4 @@
-"""Frequency + Date Reorder for Anki.
+"""Designant for Anki.
 
 The normal new-card queue is reordered as:
 - first N by a numeric note field (FreqSort by default),
@@ -27,14 +27,15 @@ from .core import (
 
 
 _DEFAULT_CONFIG: dict[str, Any] = {
-    "search_to_sort": "is:new",
+    "search_to_sort": "deck:mining is:new",
     "frequency_field": "FreqSort",
     "frequency_count": 20,
-    "date_count": 5,
+    "created_time_count": 5,
     "frequency_reverse": False,
     "created_reverse": False,
     "reorder_on_open": True,
     "reorder_on_add": True,
+    "reorder_on_note_update": True,
     "reorder_on_sync": True,
     "debounce_ms": 700,
     "show_tooltip": True,
@@ -53,7 +54,7 @@ def _config() -> dict[str, Any]:
 
     config["search_to_sort"] = str(config.get("search_to_sort", "is:new")).strip() or "is:new"
     config["frequency_field"] = str(config.get("frequency_field", "FreqSort")).strip() or "FreqSort"
-    for key, default in (("frequency_count", 20), ("date_count", 5), ("debounce_ms", 700)):
+    for key, default in (("frequency_count", 20), ("created_time_count", 5), ("debounce_ms", 700)):
         try:
             config[key] = max(0, int(config.get(key, default)))
         except (TypeError, ValueError):
@@ -64,6 +65,7 @@ def _config() -> dict[str, Any]:
         "created_reverse",
         "reorder_on_open",
         "reorder_on_add",
+        "reorder_on_note_update",
         "reorder_on_sync",
         "show_tooltip",
     ):
@@ -109,7 +111,7 @@ def reorder_collection(col: Any, config: dict[str, Any]) -> OpChangesWithCount:
     ordered_ids = build_order(
         card_values,
         frequency_count=config["frequency_count"],
-        date_count=config["date_count"],
+        created_time_count=config["created_time_count"],
         frequency_reverse=config["frequency_reverse"],
         created_reverse=config["created_reverse"],
     )
@@ -140,7 +142,7 @@ def _finish_reorder(result: Any = None) -> None:
         count = 0
 
     if count and _config()["show_tooltip"]:
-        tooltip(f"Frequency + Date Reorder: updated {count} new-card positions.")
+        tooltip(f"Designant: updated {count} new-card positions.")
 
     if _reorder_again:
         _reorder_again = False
@@ -153,7 +155,7 @@ def _fail_reorder(error: Exception) -> None:
     _reorder_running = False
     _reorder_again = False
     if not _profile_closing:
-        tooltip(f"Frequency + Date Reorder failed: {error}")
+        tooltip(f"Designant failed: {error}")
 
 
 def _start_reorder() -> None:
@@ -221,6 +223,25 @@ def _on_note_added(_note: Any) -> None:
         schedule_reorder()
 
 
+def _on_note_will_flush(note: Any) -> None:
+    """Catch edits saved through AnkiConnect updateNoteFields/updateNote.
+
+    Anki's Note._to_backend_note() fires note_will_flush before add/update.
+    Existing notes have a non-zero ID; new notes are handled by the add hook.
+    """
+    try:
+        is_existing_note = int(getattr(note, "id", 0) or 0) != 0
+    except (TypeError, ValueError):
+        is_existing_note = False
+    if is_existing_note:
+        mw.taskman.run_on_main(_schedule_note_update_if_enabled)
+
+
+def _schedule_note_update_if_enabled() -> None:
+    if _config()["reorder_on_note_update"]:
+        schedule_reorder()
+
+
 def _on_sync_did_finish() -> None:
     if _config()["reorder_on_sync"]:
         schedule_reorder()
@@ -228,7 +249,7 @@ def _on_sync_did_finish() -> None:
 
 def _manual_reorder() -> None:
     schedule_reorder()
-    tooltip("Frequency + Date Reorder: reorder queued.")
+    tooltip("Designant: reorder queued.")
 
 
 _timer = QTimer(mw)
@@ -238,9 +259,10 @@ _timer.timeout.connect(_start_reorder)
 gui_hooks.profile_did_open.append(_on_profile_did_open)
 gui_hooks.profile_will_close.append(_on_profile_will_close)
 backend_hooks.note_will_be_added.append(_on_note_will_be_added)
+backend_hooks.note_will_flush.append(_on_note_will_flush)
 gui_hooks.add_cards_did_add_note.append(_on_note_added)
 gui_hooks.sync_did_finish.append(_on_sync_did_finish)
 
-_reorder_action = QAction("Frequency + Date Reorder: Reorder New Cards", mw)
+_reorder_action = QAction("Designant", mw)
 qconnect(_reorder_action.triggered, _manual_reorder)
 mw.form.menuTools.addAction(_reorder_action)
