@@ -1,6 +1,6 @@
 # Designant
 
-A focused Anki add-on for ordering the active new-card queue by frequency, with a short creation-date block in the middle.
+A focused Anki add-on for ordering the active new-card queue by frequency, with a short creation-time block in the middle.
 
 ## Ordering
 
@@ -12,7 +12,7 @@ The default order is:
 | 21–25 | Card creation timestamp, oldest first |
 | 26 onward | `FreqSort`, ascending by default |
 
-The five-card date group is selected from the cards remaining after the first 20 frequency-ranked cards. The final group is then frequency-ranked again. With a daily new-card limit of 25, this gives the requested 20 frequency-ranked cards plus five oldest-created cards.
+The five-card time group is selected from the cards remaining after the first 20 frequency-ranked cards. The final group is then frequency-ranked again. With a daily new-card limit of 25, this gives the requested 20 frequency-ranked cards plus five oldest-created cards.
 
 
 ## How the split interacts with the daily new-card limit
@@ -85,36 +85,68 @@ Disable AutoReorder and Priority Reorder for the same cards while this add-on is
 - After synchronization finishes, to include new cards received from another device.
 - Imports do not trigger `note_will_be_added`; sync and the next profile open are the catch-up points.
 
-Add events are debounced so several notes added close together result in one reorder.
+Triggers restart a single-shot timer. The reorder runs **5 seconds after the latest trigger**, allowing a burst of adds or updates to be combined into one reorder. Change this delay with `automatic_reordering.delay_ms`.
 
 ## Configuration
 
 Open **Tools → Add-ons → Designant → Config**.
 
+The configuration is grouped into two sections to make related options easier to find:
+
+- `sorting_options`: frequency/time sorting rules and their direction/count settings.
+- `automatic_reordering`: when to run the reorder, the delay, and whether to show a tooltip.
+
+The search query and frequency field remain top-level settings. The default configuration is:
+
+```json
+{
+    "search_to_sort": "deck:mining is:new",
+    "frequency_field": "FreqSort",
+    "sorting_options": {
+        "frequency_count": 20,
+        "enable_freq_sort": true,
+        "created_time_count": 5,
+        "enable_time_sort": true,
+        "frequency_reverse": false,
+        "created_reverse": false
+    },
+    "automatic_reordering": {
+        "reorder_on_open": true,
+        "reorder_on_add": true,
+        "reorder_on_note_update": true,
+        "reorder_on_sync": true,
+        "delay_ms": 5000,
+        "show_tooltip": true
+    }
+}
+```
+
 | Setting | Default | Meaning |
 |---|---:|---|
 | `search_to_sort` | `deck:mining is:new` | Anki search selecting candidates; each card is additionally checked for new queue state and non-filtered status. |
 | `frequency_field` | `FreqSort` | Note field containing numeric frequency/rank values. |
-| `frequency_count` | `20` | Number of frequency-ranked cards placed first (used when both sort modes are enabled). |
-| `enable_freq_sort` | `true` | Enable frequency sorting. With time sorting off, the whole queue is sorted by `FreqSort`. |
-| `enable_time_sort` | `true` | Enable creation-time sorting. With frequency sorting off, the whole queue is sorted by Created Time (Card). |
-| `created_time_count` | `5` | Number of oldest remaining cards in the middle group. |
-| `frequency_reverse` | `false` | Set true if larger frequency values should come first. |
-| `created_reverse` | `false` | Set true for newest-created cards first in the middle group. |
-| `reorder_on_open` | `true` | Reorder when a profile opens. |
-| `reorder_on_add` | `true` | Reorder after Add-window or AnkiConnect note additions. |
-| `reorder_on_note_update` | `true` | Reorder after an existing note is saved/updated, including AnkiConnect field updates. |
-| `reorder_on_sync` | `true` | Reorder after sync finishes. |
-| `debounce_ms` | `700` | Delay after an add event before reordering. |
-| `show_tooltip` | `true` | Show a notice when positions change. |
+| `sorting_options.frequency_count` | `20` | Number of frequency-ranked cards placed first (used when both sort modes are enabled). |
+| `sorting_options.enable_freq_sort` | `true` | Enable frequency sorting. With time sorting off, the whole queue is sorted by `FreqSort`. |
+| `sorting_options.enable_time_sort` | `true` | Enable creation-time sorting. With frequency sorting off, the whole queue is sorted by Created Time (Card). |
+| `sorting_options.created_time_count` | `5` | Number of oldest remaining cards in the middle group. |
+| `sorting_options.frequency_reverse` | `false` | Set true if larger frequency values should come first. |
+| `sorting_options.created_reverse` | `false` | Set true for newest-created cards first in the middle group. |
+| `automatic_reordering.reorder_on_open` | `true` | Reorder when a profile opens. |
+| `automatic_reordering.reorder_on_add` | `true` | Reorder after Add-window or AnkiConnect note additions. |
+| `automatic_reordering.reorder_on_note_update` | `true` | Reorder after an existing note is saved/updated, including AnkiConnect field updates. |
+| `automatic_reordering.reorder_on_sync` | `true` | Reorder after sync finishes. |
+| `automatic_reordering.delay_ms` | `5000` | Wait 5 seconds after the latest trigger before reordering. |
+| `automatic_reordering.show_tooltip` | `true` | Show a notice when positions change. |
 
-Blank or non-numeric `FreqSort` values cannot be frequency-ranked. They can enter the five-card date group; any remaining cards without a numeric value trail the final frequency-ranked group.
+Blank or non-numeric `FreqSort` values cannot be frequency-ranked. They can enter the five-card time group; any remaining cards without a numeric value trail the final frequency-ranked group.
 
-Anki card IDs are millisecond timestamps of card creation, so the add-on uses the ID for the date group instead of note modification time. This is equivalent to sorting by **Created Time (Card)**, not just **Created Date (Card)**.
+Anki card IDs are millisecond timestamps of card creation, so the add-on uses the ID for the time group instead of note modification time. This is equivalent to sorting by **Created Time (Card)**, not just **Created Date (Card)**.
+
+Existing flat configuration keys are still read for compatibility, including `date_count` as an alias for `created_time_count`. The old `debounce_ms` setting is replaced by `delay_ms`, whose new default is 5000 ms.
 
 ## Development
 
-The ordering helpers are pure Python and have unit tests:
+The ordering helpers and config normalization are pure Python and have unit tests:
 
 ```bash
 python -m unittest discover -s tests -v
