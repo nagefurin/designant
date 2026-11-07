@@ -33,6 +33,15 @@ The grouping is independent of the limit. If you later change your daily limit t
 
 This assumes Anki is drawing from the same new-card queue selected by `search_to_sort` and that other deck/subdeck limits or other add-ons are not imposing a different selection order.
 
+
+## Creation date vs. creation time
+
+The middle group uses **Created Time (Card)**, not a day-only Created Date value. Anki card IDs contain the card's creation timestamp in milliseconds, and Designant sorts those IDs numerically. This preserves the date and the time within that date.
+
+If 25 cards were all created today, the add-on will not skip the date group or wait for cards from an earlier calendar day. It first places the 20 best-ranked cards by `FreqSort`; the next five cards are the five oldest creation timestamps among the remaining cards. If all 25 were created today, those five will also be from today, ordered by the time they were created.
+
+For cards that share the same calendar date, creation time still distinguishes their order. The daily limit controls how many of those positions Anki introduces; it does not alter how Designant chooses the groups.
+
 ## Safety: what the add-on changes
 
 The add-on only repositions **active, ordinary new cards**. A candidate must have Anki's `CardType.New` (`type == 0`), `CardQueue.New` (`queue == 0`), and no original deck ID (`odid == 0`).
