@@ -91,7 +91,7 @@ Triggers restart a single-shot timer. The reorder runs **5 seconds after the lat
 
 Open **Tools → Add-ons → Designant → Config**.
 
-The configuration is grouped into two sections to make related options easier to find:
+The configuration is grouped into two sections:
 
 - `sorting_options`: frequency/time sorting rules and their direction/count settings.
 - `automatic_reordering`: when to run the reorder, the delay, and whether to show a tooltip.
@@ -141,8 +141,6 @@ The search query and frequency field remain top-level settings. The default conf
 Blank or non-numeric `FreqSort` values cannot be frequency-ranked. They can enter the five-card time group; any remaining cards without a numeric value trail the final frequency-ranked group.
 
 Anki card IDs are millisecond timestamps of card creation, so the add-on uses the ID for the time group instead of note modification time. This is equivalent to sorting by **Created Time (Card)**, not just **Created Date (Card)**.
-
-Existing flat configuration keys are still read for compatibility, including `date_count` as an alias for `created_time_count`. The old `debounce_ms` setting is replaced by `delay_ms`, whose new default is 5000 ms.
 
 ## Development
 
