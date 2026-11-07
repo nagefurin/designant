@@ -39,7 +39,7 @@ The add-on only repositions **active, ordinary new cards**. A candidate must hav
 
 It calls Anki's `reposition_new_cards()` with `shift_existing=False`, then restores Anki's saved random-reposition and shift-existing preferences. Learning, review, suspended, buried, and filtered-deck cards are not passed to the reorder operation. The add-on does not change review intervals, ease, FSRS memory state, deck options, or daily limits.
 
-The default search is `is:new`, so the add-on manages the complete ordinary new-card queue. Narrowing `search_to_sort` to a subset intentionally leaves other new cards untouched; because new-card due positions are shared, this can create overlapping position numbers. Keep the default unless a partial reorder is intentional.
+The default search is `deck:mining is:new`, so the add-on manages the complete ordinary new-card queue. Narrowing `search_to_sort` to a subset intentionally leaves other new cards untouched; because new-card due positions are shared, this can create overlapping position numbers. Keep the default unless a partial reorder is intentional.
 
 ## Install
 
@@ -47,14 +47,15 @@ The default search is `is:new`, so the add-on manages the complete ordinary new-
 2. In Anki, open **Tools → Add-ons → Install from file**.
 3. Select the `.ankiaddon` package built from this repository.
 4. Restart Anki.
-5. Use **Tools → Frequency + Date Reorder: Reorder New Cards** for a manual test.
+5. Use **Tools → Designant** for a manual test.
 
 Disable AutoReorder and Priority Reorder for the same cards while this add-on is active, otherwise those add-ons may overwrite its queue order.
 
 ## Automatic triggers
 
 - After adding a note through Anki's Add window.
-- After adding a note through AnkiConnect (using Anki's backend `note_will_be_added` hook).
+- After adding a note through AnkiConnect (using `note_will_be_added`).
+- After editing an existing note through AnkiConnect `updateNoteFields` or `updateNote` (using Anki's `note_will_flush` hook).
 - Whenever an Anki profile is opened or switched to.
 - After synchronization finishes, to include new cards received from another device.
 - Imports do not trigger `note_will_be_added`; sync and the next profile open are the catch-up points.
@@ -63,18 +64,19 @@ Add events are debounced so several notes added close together result in one reo
 
 ## Configuration
 
-Open **Tools → Add-ons → Frequency + Date Reorder → Config**.
+Open **Tools → Add-ons → Designant → Config**.
 
 | Setting | Default | Meaning |
 |---|---:|---|
-| `search_to_sort` | `is:new` | Anki search selecting candidates; each card is additionally checked for new queue state and non-filtered status. |
+| `search_to_sort` | `deck:mining is:new` | Anki search selecting candidates; each card is additionally checked for new queue state and non-filtered status. |
 | `frequency_field` | `FreqSort` | Note field containing numeric frequency/rank values. |
 | `frequency_count` | `20` | Number of frequency-ranked cards placed first. |
-| `date_count` | `5` | Number of oldest remaining cards in the middle group. |
+| `created_time_count` | `5` | Number of oldest remaining cards in the middle group. |
 | `frequency_reverse` | `false` | Set true if larger frequency values should come first. |
 | `created_reverse` | `false` | Set true for newest-created cards first in the middle group. |
 | `reorder_on_open` | `true` | Reorder when a profile opens. |
 | `reorder_on_add` | `true` | Reorder after Add-window or AnkiConnect note additions. |
+| `reorder_on_note_update` | `true` | Reorder after an existing note is saved/updated, including AnkiConnect field updates. |
 | `reorder_on_sync` | `true` | Reorder after sync finishes. |
 | `debounce_ms` | `700` | Delay after an add event before reordering. |
 | `show_tooltip` | `true` | Show a notice when positions change. |
