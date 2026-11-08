@@ -50,6 +50,7 @@ _DEFAULT_CONFIG: dict[str, Any] = {
 
 _reorder_running = False
 _reorder_again = False
+_reorder_deferred_until_not_review = False
 _profile_closing = False
 
 
@@ -173,9 +174,15 @@ def _fail_reorder(error: Exception) -> None:
 
 
 def _start_reorder() -> None:
-    global _reorder_running, _reorder_again
+    global _reorder_running, _reorder_again, _reorder_deferred_until_not_review
 
     if _profile_closing or mw.col is None:
+        return
+    # Anki exposes its current main-window state as mw.state. Never change the
+    # new-card queue while the Reviewer is active, even if a timer was already
+    # pending when the user entered review.
+    if getattr(mw, "state", None) == "review":
+        _reorder_deferred_until_not_review = True
         return
     if _reorder_running:
         _reorder_again = True
@@ -196,10 +203,29 @@ def _start_reorder() -> None:
 
 
 def schedule_reorder() -> None:
-    """Wait for delay_ms after the latest trigger, then reorder the queue."""
+    """Wait for delay_ms after the latest trigger, unless review is active."""
+    global _reorder_deferred_until_not_review
+
     if _profile_closing or mw.col is None:
         return
+    if getattr(mw, "state", None) == "review":
+        _reorder_deferred_until_not_review = True
+        _timer.stop()
+        return
     _timer.start(_config()["delay_ms"])
+
+
+def _on_state_did_change(new_state: str, old_state: str) -> None:
+    """Resume a deferred reorder after Anki leaves the Reviewer."""
+    global _reorder_deferred_until_not_review
+
+    if (
+        old_state == "review"
+        and new_state != "review"
+        and _reorder_deferred_until_not_review
+    ):
+        _reorder_deferred_until_not_review = False
+        schedule_reorder()
 
 
 def _schedule_add_reorder_if_enabled() -> None:
@@ -210,17 +236,19 @@ def _schedule_add_reorder_if_enabled() -> None:
 
 
 def _on_profile_did_open() -> None:
-    global _profile_closing, _reorder_again
+    global _profile_closing, _reorder_again, _reorder_deferred_until_not_review
     _profile_closing = False
     _reorder_again = False
+    _reorder_deferred_until_not_review = False
     if _config()["reorder_on_open"]:
         schedule_reorder()
 
 
 def _on_profile_will_close() -> None:
-    global _profile_closing, _reorder_again
+    global _profile_closing, _reorder_again, _reorder_deferred_until_not_review
     _profile_closing = True
     _reorder_again = False
+    _reorder_deferred_until_not_review = False
     _timer.stop()
 
 
@@ -272,6 +300,8 @@ _timer.timeout.connect(_start_reorder)
 
 gui_hooks.profile_did_open.append(_on_profile_did_open)
 gui_hooks.profile_will_close.append(_on_profile_will_close)
+gui_hooks.state_did_change.append(_on_state_did_change)
+gui_hooks.backend_will_block if False else None
 backend_hooks.note_will_be_added.append(_on_note_will_be_added)
 backend_hooks.note_will_flush.append(_on_note_will_flush)
 gui_hooks.add_cards_did_add_note.append(_on_note_added)
