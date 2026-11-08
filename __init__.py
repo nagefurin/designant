@@ -301,7 +301,6 @@ _timer.timeout.connect(_start_reorder)
 gui_hooks.profile_did_open.append(_on_profile_did_open)
 gui_hooks.profile_will_close.append(_on_profile_will_close)
 gui_hooks.state_did_change.append(_on_state_did_change)
-gui_hooks.backend_will_block if False else None
 backend_hooks.note_will_be_added.append(_on_note_will_be_added)
 backend_hooks.note_will_flush.append(_on_note_will_flush)
 gui_hooks.add_cards_did_add_note.append(_on_note_added)
