@@ -87,8 +87,6 @@ Disable AutoReorder and Priority Reorder for the same cards while this add-on is
 
 Triggers restart a single-shot timer. The reorder runs **5 seconds after the latest trigger**, allowing a burst of adds or updates to be combined into one reorder. Change this delay with `automatic_reordering.delay_ms`.
 
-**Reviewer protection:** Designant checks Anki's main-window state (`mw.state`). If a reorder is triggered while the Reviewer is active (`mw.state == "review"`), Designant defers it instead of changing the queue during study. When Anki leaves the Reviewer, the normal `delay_ms` countdown starts. This uses Anki's state-change hook; it does not poll in the background.
-
 ## Configuration
 
 Open **Tools → Add-ons → Designant → Config**.
